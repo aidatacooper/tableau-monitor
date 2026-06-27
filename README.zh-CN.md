@@ -1,28 +1,28 @@
 # Tableau Flow Monitor
 
-[中文文档](README.zh-CN.md)
+[English](README.md)
 
-Auto-monitor Tableau Server flow runs and automatically cancel tasks that exceed a time threshold.
+自动监控 Tableau Server 上长时间运行的 Flow 任务，超时自动取消。
 
-## Features
+## 功能
 
-- Checks flow run status every 10 minutes
-- Auto-cancels tasks running longer than 1 hour (configurable)
-- `--dry-run` mode for safe testing
-- Logs to systemd journal with flow names and job IDs
-- Auto-start on boot, auto-restart on failure
+- 每 10 分钟检查一次 Flow 运行状态
+- 超过 1 小时未完成的任务自动取消（可配置）
+- 支持 `--dry-run` 模式（只检查不取消）
+- 日志输出到 systemd journal，包含 Flow 名称和 Job ID
+- 开机自启、崩溃自动重启
 
-## Quick Start
+## 快速开始
 
-### 1. Install Dependencies
+### 1. 安装依赖
 
 ```bash
 pip install tableauserverclient python-dotenv
 ```
 
-### 2. Configure
+### 2. 配置
 
-Copy `.env.example` to `.env` and fill in your Tableau Server credentials:
+复制 `.env.example` 为 `.env`，填入 Tableau Server 信息：
 
 ```bash
 cp .env.example .env
@@ -36,17 +36,17 @@ PERSONAL_ACCESS_TOKEN_SECRET = 'your_token_secret'
 SITE_NAME = ''
 ```
 
-### 3. Test Run
+### 3. 测试运行
 
 ```bash
-# Check once, no cancellation (safe test)
+# 只检查一次，不取消（安全测试）
 python monitor_long_flows.py --once --dry-run
 
-# Check once, actually cancel timed-out tasks
+# 只检查一次，超时会实际取消
 python monitor_long_flows.py --once
 ```
 
-### 4. Deploy as System Service
+### 4. 部署为系统服务
 
 ```bash
 cat > /etc/systemd/system/tableau-monitor.service << 'EOF'
@@ -72,50 +72,50 @@ systemctl enable tableau-monitor
 systemctl start tableau-monitor
 ```
 
-## Usage
+## 使用方式
 
 ```bash
-# Default: check every 10min, cancel if > 1h
+# 默认：每 10 分钟检查，超 1h 自动取消
 python monitor_long_flows.py
 
-# Dry run (check only, no cancellation)
+# 只检查不取消
 python monitor_long_flows.py --dry-run
 
-# Custom timeout (2 hours)
+# 自定义超时阈值（2 小时）
 python monitor_long_flows.py --timeout 2
 
-# Combined
+# 组合使用
 python monitor_long_flows.py --dry-run --timeout 0.5
 
-# Run once and exit
+# 只运行一次就退出
 python monitor_long_flows.py --once
 ```
 
-## Service Management
+## 服务管理
 
 ```bash
-# Check status
+# 查看状态
 systemctl status tableau-monitor
 
-# View live logs
+# 查看实时日志
 journalctl -u tableau-monitor -f
 
-# View recent logs
+# 查看最近日志
 journalctl -u tableau-monitor --since "10 min ago"
 
-# Stop / Restart
+# 停止 / 重启
 systemctl stop tableau-monitor
 systemctl restart tableau-monitor
 ```
 
-## How It Works
+## 工作原理
 
-1. Query flow runs from the last 24 hours via Tableau REST API (TSC)
-2. Filter for incomplete runs (`completed_at` is null) with elapsed time ≥ threshold
-3. Cancel the background job via `server.jobs.cancel()`
-4. Wait 10 minutes and repeat
+1. 通过 Tableau REST API (TSC) 查询最近 24 小时的 Flow Runs
+2. 筛选未完成（`completed_at` 为空）且运行时间 ≥ 阈值的任务
+3. 调用 `server.jobs.cancel()` 取消对应的 Background Job
+4. 等待 10 分钟后重复检查
 
-## Requirements
+## 环境要求
 
 - Python 3.8+
 - Tableau Server 2024.2+ (API 3.10+)
